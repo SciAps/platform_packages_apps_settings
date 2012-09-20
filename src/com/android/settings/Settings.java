@@ -28,6 +28,7 @@ import com.android.settings.deviceinfo.Memory;
 import com.android.settings.fuelgauge.PowerUsageSummary;
 import com.android.settings.vpn2.VpnSettings;
 import com.android.settings.wifi.WifiEnabler;
+import com.android.settings.eth.EthernetEnabler;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -46,6 +47,7 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.SystemProperties;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
@@ -105,6 +107,7 @@ public class Settings extends PreferenceActivity
             R.id.data_usage_settings,
             R.id.wireless_settings,
             R.id.device_section,
+            R.id.ethernet_settings,
             R.id.sound_settings,
             R.id.display_settings,
             R.id.storage_settings,
@@ -134,10 +137,20 @@ public class Settings extends PreferenceActivity
     private Header mLastHeader;
     private boolean mListeningToAccountUpdates;
 
+    // This field need to be static to access to it
+    // from static HeaderAdapter class
+    private static boolean hasEthernetFeature;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (getIntent().getBooleanExtra(EXTRA_CLEAR_UI_OPTIONS, false)) {
             getWindow().setUiOptions(0);
+        }
+
+        if (SystemProperties.OMAP_ENHANCEMENT) {
+            hasEthernetFeature = getPackageManager().hasSystemFeature(PackageManager.FEATURE_ETHERNET);
+        } else {
+            hasEthernetFeature = false;
         }
 
         mAuthenticatorHelper = new AuthenticatorHelper();
@@ -429,6 +442,11 @@ public class Settings extends PreferenceActivity
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI)) {
                     target.remove(i);
                 }
+            } else if (SystemProperties.OMAP_ENHANCEMENT && (id == R.id.ethernet_settings)) {
+                // Remove Ethernet Settings if Ethernet service is not available.
+                if (!hasEthernetFeature) {
+                    target.remove(header);
+                }
             } else if (id == R.id.bluetooth_settings) {
                 // Remove Bluetooth Settings if Bluetooth service is not available.
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) {
@@ -581,6 +599,7 @@ public class Settings extends PreferenceActivity
 
         private final WifiEnabler mWifiEnabler;
         private final BluetoothEnabler mBluetoothEnabler;
+        private final EthernetEnabler mEthernetEnabler;
         private AuthenticatorHelper mAuthHelper;
 
         private static class HeaderViewHolder {
@@ -595,7 +614,8 @@ public class Settings extends PreferenceActivity
         static int getHeaderType(Header header) {
             if (header.fragment == null && header.intent == null) {
                 return HEADER_TYPE_CATEGORY;
-            } else if (header.id == R.id.wifi_settings || header.id == R.id.bluetooth_settings) {
+            } else if (header.id == R.id.wifi_settings || header.id == R.id.bluetooth_settings
+                        || (SystemProperties.OMAP_ENHANCEMENT && (header.id == R.id.ethernet_settings))) {
                 return HEADER_TYPE_SWITCH;
             } else {
                 return HEADER_TYPE_NORMAL;
@@ -639,6 +659,11 @@ public class Settings extends PreferenceActivity
             // Switches inflated from their layouts. Must be done before adapter is set in super
             mWifiEnabler = new WifiEnabler(context, new Switch(context));
             mBluetoothEnabler = new BluetoothEnabler(context, new Switch(context));
+            if (SystemProperties.OMAP_ENHANCEMENT && hasEthernetFeature) {
+                mEthernetEnabler = new EthernetEnabler(context, new Switch(context));
+            } else {
+                mEthernetEnabler = null;
+            }
         }
 
         @Override
@@ -693,10 +718,20 @@ public class Settings extends PreferenceActivity
 
                 case HEADER_TYPE_SWITCH:
                     // Would need a different treatment if the main menu had more switches
-                    if (header.id == R.id.wifi_settings) {
-                        mWifiEnabler.setSwitch(holder.switch_);
+                    if (SystemProperties.OMAP_ENHANCEMENT) {
+                        if (header.id == R.id.wifi_settings) {
+                            mWifiEnabler.setSwitch(holder.switch_);
+                        } else if (header.id == R.id.bluetooth_settings) {
+                            mBluetoothEnabler.setSwitch(holder.switch_);
+                        } else if (header.id == R.id.ethernet_settings && hasEthernetFeature) {
+                            mEthernetEnabler.setSwitch(holder.switch_);
+                        }
                     } else {
-                        mBluetoothEnabler.setSwitch(holder.switch_);
+                        if (header.id == R.id.wifi_settings) {
+                            mWifiEnabler.setSwitch(holder.switch_);
+                        } else {
+                            mBluetoothEnabler.setSwitch(holder.switch_);
+                        }
                     }
                     // No break, fall through on purpose to update common fields
 
@@ -733,11 +768,17 @@ public class Settings extends PreferenceActivity
         public void resume() {
             mWifiEnabler.resume();
             mBluetoothEnabler.resume();
+            if (SystemProperties.OMAP_ENHANCEMENT && hasEthernetFeature) {
+                mEthernetEnabler.resume();
+            }
         }
 
         public void pause() {
             mWifiEnabler.pause();
             mBluetoothEnabler.pause();
+            if (SystemProperties.OMAP_ENHANCEMENT && hasEthernetFeature) {
+                mEthernetEnabler.pause();
+            }
         }
     }
 
@@ -804,6 +845,7 @@ public class Settings extends PreferenceActivity
     public static class StorageSettingsActivity extends Settings { /* empty */ }
     public static class WifiSettingsActivity extends Settings { /* empty */ }
     public static class WifiP2pSettingsActivity extends Settings { /* empty */ }
+    public static class EthernetSettingsActivity extends Settings { /* empty */ }
     public static class InputMethodAndLanguageSettingsActivity extends Settings { /* empty */ }
     public static class KeyboardLayoutPickerActivity extends Settings { /* empty */ }
     public static class InputMethodAndSubtypeEnablerActivity extends Settings { /* empty */ }

@@ -1638,6 +1638,50 @@
          Label on Wifi Configuration screen-->
     <string name="config_list_label" translatable="false">Configured networks</string>
 
+    <!-- ETHERNET -->
+
+    <!-- Do not translate -->
+    <string name="ethernet_settings_title" translatable="false">Ethernet</string>
+    <string name="ethernet_ip_settings">IP settings</string>
+    <!-- Hint text for the IP address -->
+    <string name="ethernet_ip_address_hint" translatable="false">192.168.1.128</string>
+    <!-- Label for the gateway of the network -->
+    <string name="ethernet_gateway">Gateway</string>
+    <!-- Hint text for the gateway -->
+    <string name="ethernet_gateway_hint" translatable="false">192.168.1.1</string>
+    <!-- Label for the network prefix of the network [CHAR LIMIT=25]-->
+    <string name="ethernet_network_prefix_length">Network prefix length</string>
+    <!-- Hint text for network prefix length -->
+    <string name="ethernet_network_prefix_length_hint" translatable="false">24</string>
+    <!-- Label for the DNS (first one) -->
+    <string name="ethernet_dns1">DNS 1</string>
+    <!-- Hint text for DNS. This is primary Open DNS host. See www.opendns.com -->
+    <string name="ethernet_dns1_hint" translatable="false">208.67.222.222</string>
+    <!-- Label for the DNS (second one)-->
+    <string name="ethernet_dns2">DNS 2</string>
+    <!-- Hint text for DNS. This is secondary Open DNS host. See www.opendns.com -->
+    <string name="ethernet_dns2_hint" translatable="false">208.67.220.220</string>
+    <!-- Error message if the IP address is not valid [CHAR LIMIT=50]-->
+    <string name="ethernet_ip_settings_invalid_ip_address">Type a valid IP address.</string>
+    <!-- Error message if the gateway is not valid [CHAR LIMIT=50]-->
+    <string name="ethernet_ip_settings_invalid_gateway">Type a valid gateway address.</string>
+    <!-- Error message if the dns is not valid [CHAR LIMIT=50]-->
+    <string name="ethernet_ip_settings_invalid_dns">Type a valid DNS address.</string>
+    <!-- Error message if the network prefix length is not valid [CHAR LIMIT=50]-->
+    <string name="ethernet_ip_settings_invalid_network_prefix_length">Type a network prefix length between 0 and 32.</string>
+    <!-- Apply button on interface configuration dialog -->
+    <string name="ethernet_apply_button">Apply</string>
+    <!-- Ethernet settings. Text displayed when Ethernet is off and device list is empty [CHAR LIMIT=50]-->
+    <string name="ethernet_empty_list_ethernet_off">To see last plugged ethernet interface, turn Ethernet on.</string>
+    <string name="ethernet_interface_not_found">No ethernet interfaces found on the board.</string>
+    <!-- Messages for the ethernet IP configuration. -->
+    <string name="ethernet_connecting_message">Connecting...</string>
+    <string name="ethernet_connected_message">Connected</string>
+    <string name="ethernet_disconnecting_message">Disconnecting...</string>
+    <string name="ethernet_disconnected_message">Disconnected</string>
+    <string name="ethernet_obtaining_ip_addr_message">Obtaining IP address...</string>
+    <string name="ethernet_fail_message">Failed operation</string>
+
     <!-- Sound and alerts settings -->
     <skip/>
     <!-- Main Settings screen setting option name to go into the display settings screen -->

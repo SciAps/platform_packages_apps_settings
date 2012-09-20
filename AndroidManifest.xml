@@ -355,6 +355,34 @@
                 android:value="com.android.settings.Settings$WirelessSettingsActivity" />
         </activity>
 
+        <activity android:name="Settings$EthernetSettingsActivity"
+                android:label="@string/ethernet_settings_title"
+                android:clearTaskOnLaunch="true"
+                android:parentActivityName="Settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.settings.ETHERNET_SETTINGS" />
+                <category android:name="android.intent.category.VOICE_LAUNCH" />
+                <category android:name="com.android.settings.SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
+                android:value="com.android.settings.eth.EthernetSettings" />
+            <meta-data android:name="com.android.settings.TOP_LEVEL_HEADER_ID"
+                android:resource="@id/ethernet_settings" />
+        </activity>
+
+        <!-- Keep compatibility with old shortcuts. -->
+        <activity-alias android:name=".eth.EthernetSettings"
+                android:label="@string/ethernet_settings_title"
+                android:targetActivity="Settings$EthernetSettingsActivity"
+                android:exported="true"
+                android:clearTaskOnLaunch="true">
+            <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
+                android:value="com.android.settings.eth.EthernetSettings" />
+            <meta-data android:name="com.android.settings.TOP_LEVEL_HEADER_ID"
+                android:resource="@id/ethernet_settings" />
+        </activity-alias>
 
         <activity android:name="Settings$VpnSettingsActivity"
                 android:label="@string/vpn_settings_title"
