@@ -66,6 +66,8 @@ public class EthernetSettings extends SettingsPreferenceFragment {
         mFilter.addAction(TIEthernetManager.ETH_INTERFACE_STATE_CHANGED_ACTION);
         mFilter.addAction(TIEthernetManager.ETH_GLOBAL_STATE_CHANGED_ACTION);
         mFilter.addAction(TIEthernetManager.ETH_LINK_CONFIGURATION_CHANGED_ACTION);
+        mFilter.addAction(TIEthernetManager.ETH_INTERFACE_ADDED_ACTION);
+        mFilter.addAction(TIEthernetManager.ETH_INTERFACE_REMOVED_ACTION);
 
         mReceiver = new BroadcastReceiver() {
             @Override
@@ -130,14 +132,6 @@ public class EthernetSettings extends SettingsPreferenceFragment {
         }
         // Show last found interface only
         if (foundSmth) {
-            // Get current connection status
-            ConnectivityManager connMgr = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connMgr.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
-            LinkProperties link = connMgr.getLinkProperties(ConnectivityManager.TYPE_ETHERNET);
-            if (mIfaceToConfigure.equals(link.getInterfaceName())) {
-                // Set current status
-                pref.SetIfaceStatus(networkInfo.getDetailedState());
-            }
             // Add pereference
             getPreferenceScreen().addPreference(pref);
         } else {
@@ -145,12 +139,24 @@ public class EthernetSettings extends SettingsPreferenceFragment {
         }
     }
 
-    private void updateIfaceProperties(LinkProperties prop) {
+    private void updateIfaceProperties(LinkProperties prop, NetworkInfo info) {
 
-        String iface = prop.getInterfaceName();
-        if (iface.equals(mIfaceToConfigure)) {
-            EthernetInterfacePref pref = (EthernetInterfacePref) getPreferenceScreen().findPreference(iface);
-            pref.SetLinkProperties(prop);
+        if (prop != null) {
+            String iface = prop.getInterfaceName();
+            if (iface.equals(mIfaceToConfigure)) {
+                EthernetInterfacePref pref = (EthernetInterfacePref) getPreferenceScreen().findPreference(iface);
+                pref.SetLinkProperties(prop);
+            }
+        }
+
+        if (info != null) {
+            String iface = prop.getInterfaceName();
+            if (iface.equals(mIfaceToConfigure)) {
+                EthernetInterfacePref pref = (EthernetInterfacePref) getPreferenceScreen().findPreference(iface);
+                pref.SetLinkProperties(prop);
+                // Set current status
+                pref.SetIfaceStatus(info.getDetailedState());
+            }
         }
     }
 
@@ -162,20 +168,25 @@ public class EthernetSettings extends SettingsPreferenceFragment {
                 if (mEthManager.getEthernetState()) {
                     NetworkInfo    info = (NetworkInfo) intent.getExtra(TIEthernetManager.EXTRA_NETWORK_INFO);
                     LinkProperties prop = (LinkProperties) intent.getExtra(TIEthernetManager.EXTRA_LINK_PROPERTIES);
-                    refreshView();
-                    updateIfaceProperties(prop);
+                    updateIfaceProperties(prop, info);
                 }
             }
         } else if (TIEthernetManager.ETH_LINK_CONFIGURATION_CHANGED_ACTION.equals(action)) {
             if (null != mEthManager) {
                 if (mEthManager.getEthernetState()) {
                     LinkProperties prop = (LinkProperties) intent.getExtra(TIEthernetManager.EXTRA_LINK_PROPERTIES);
-                    refreshView();
-                    updateIfaceProperties(prop);
+                    updateIfaceProperties(prop, null);
                 }
             }
         } else if (TIEthernetManager.ETH_GLOBAL_STATE_CHANGED_ACTION.equals(action)) {
             refreshView();
+        } else if (TIEthernetManager.ETH_INTERFACE_ADDED_ACTION.equals(action)
+                    || TIEthernetManager.ETH_INTERFACE_REMOVED_ACTION.equals(action)) {
+            if (null != mEthManager) {
+                if (mEthManager.getEthernetState()) {
+                    refreshView();
+                }
+            }
         }
     }
 
