@@ -39,6 +39,7 @@ import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
@@ -81,6 +82,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private WifiDisplayStatus mWifiDisplayStatus;
     private Preference mWifiDisplayPreference;
     private CheckBoxPreference mWifiDisplayActivator;
+    private boolean mIsMultiPane;
 
     private final RotationPolicy.RotationPolicyListener mRotationPolicyListener =
             new RotationPolicy.RotationPolicyListener() {
@@ -144,21 +146,38 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mWifiDisplayPreference = (Preference)findPreference(KEY_WIFI_DISPLAY);
 
         if (SystemProperties.OMAP_ENHANCEMENT) {
+            if (getActivity() instanceof PreferenceActivity) {
+                PreferenceActivity preferenceActivity = (PreferenceActivity) getActivity();
+                if (preferenceActivity.onIsHidingHeaders() || !preferenceActivity.onIsMultiPane()) {
+                    mIsMultiPane = false;
+                } else {
+                    mIsMultiPane = true;
+                }
+            }
+
             boolean wifiDisplayActivated = Settings.Global.getInt(getContentResolver(),
                     Settings.Global.WIFI_DISPLAY_ON, 0) != 0;
             mWifiDisplayActivator = (CheckBoxPreference)findPreference(KEY_WIFI_DISPLAY_ACTIVATOR);
-            mWifiDisplayActivator.setOnPreferenceClickListener(this);
-            mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
-                    Settings.Global.WIFI_ON, 0) != 0);
-            mWifiDisplayActivator.setChecked(wifiDisplayActivated);
-            mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+
+            if (mIsMultiPane) {
+                mWifiDisplayActivator.setOnPreferenceClickListener(this);
+                mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
+                        Settings.Global.WIFI_ON, 0) != 0);
+                mWifiDisplayActivator.setChecked(wifiDisplayActivated);
+                mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+            } else {
+                getPreferenceScreen().removePreference(mWifiDisplayActivator);
+                mWifiDisplayActivator = null;
+            }
         }
 
         if (mWifiDisplayStatus.getFeatureState()
                 == WifiDisplayStatus.FEATURE_STATE_UNAVAILABLE) {
             if (SystemProperties.OMAP_ENHANCEMENT) {
-                getPreferenceScreen().removePreference(mWifiDisplayActivator);
-                mWifiDisplayActivator = null;
+                if (mIsMultiPane) {
+                    getPreferenceScreen().removePreference(mWifiDisplayActivator);
+                    mWifiDisplayActivator = null;
+                }
             }
             getPreferenceScreen().removePreference(mWifiDisplayPreference);
             mWifiDisplayPreference = null;
@@ -269,21 +288,26 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             getActivity().registerReceiver(mReceiver, new IntentFilter(
                     DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED));
             if (SystemProperties.OMAP_ENHANCEMENT) {
-                getActivity().registerReceiver(mReceiver, new IntentFilter(
-                        WifiManager.WIFI_STATE_CHANGED_ACTION));
+                if (mIsMultiPane) {
+                    getActivity().registerReceiver(mReceiver, new IntentFilter(
+                            WifiManager.WIFI_STATE_CHANGED_ACTION));
+                }
             }
             mWifiDisplayStatus = mDisplayManager.getWifiDisplayStatus();
         }
 
         if (SystemProperties.OMAP_ENHANCEMENT) {
-            boolean wifiDisplayActivated = Settings.Global.getInt(getContentResolver(),
-                    Settings.Global.WIFI_DISPLAY_ON, 0) != 0;
+            if (mIsMultiPane) {
+                if (mWifiDisplayActivator != null) {
+                    boolean wifiDisplayActivated = Settings.Global.getInt(getContentResolver(),
+                            Settings.Global.WIFI_DISPLAY_ON, 0) != 0;
+                    mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
+                            Settings.Global.WIFI_ON, 0) != 0);
 
-            mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
-                    Settings.Global.WIFI_ON, 0) != 0);
-
-            mWifiDisplayActivator.setChecked(wifiDisplayActivated);
-            mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+                    mWifiDisplayActivator.setChecked(wifiDisplayActivated);
+                    mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+                }
+            }
         }
 
         updateState();
@@ -403,17 +427,19 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             }
 
             if (SystemProperties.OMAP_ENHANCEMENT) {
-                if (intent.getAction().equals(WifiManager.WIFI_STATE_CHANGED_ACTION )) {
-                    int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
+                if (mIsMultiPane) {
+                    if (intent.getAction().equals(WifiManager.WIFI_STATE_CHANGED_ACTION )) {
+                        int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
 
-                    if (wifiState == WifiManager.WIFI_STATE_ENABLED) {
-                        mWifiDisplayActivator.setEnabled(true);
-                    } else {
-                        Settings.Global.putInt(getContentResolver(),
-                                Settings.Global.WIFI_DISPLAY_ON, 0);
-                        mWifiDisplayActivator.setChecked(false);
-                        mWifiDisplayPreference.setEnabled(false);
-                        mWifiDisplayActivator.setEnabled(false);
+                        if ((wifiState == WifiManager.WIFI_STATE_ENABLED) && (mWifiDisplayActivator != null)) {
+                            mWifiDisplayActivator.setEnabled(true);
+                        } else {
+                            Settings.Global.putInt(getContentResolver(),
+                                    Settings.Global.WIFI_DISPLAY_ON, 0);
+                            mWifiDisplayActivator.setChecked(false);
+                            mWifiDisplayPreference.setEnabled(false);
+                            mWifiDisplayActivator.setEnabled(false);
+                        }
                     }
                 }
             }
@@ -431,11 +457,13 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             }
         }
         if (SystemProperties.OMAP_ENHANCEMENT) {
-            if (preference == mWifiDisplayActivator) {
-                Settings.Global.putInt(getContentResolver(),
-                        Settings.Global.WIFI_DISPLAY_ON, mWifiDisplayActivator.isChecked() ? 1 : 0);
-                mWifiDisplayPreference.setEnabled(Settings.Global.getInt(getContentResolver(),
-                        Settings.Global.WIFI_DISPLAY_ON, 0) != 0);
+            if (mIsMultiPane) {
+                if ((mWifiDisplayActivator != null) && (preference == mWifiDisplayActivator)) {
+                    Settings.Global.putInt(getContentResolver(),
+                            Settings.Global.WIFI_DISPLAY_ON, mWifiDisplayActivator.isChecked() ? 1 : 0);
+                    mWifiDisplayPreference.setEnabled(Settings.Global.getInt(getContentResolver(),
+                            Settings.Global.WIFI_DISPLAY_ON, 0) != 0);
+                }
             }
         }
         return false;
