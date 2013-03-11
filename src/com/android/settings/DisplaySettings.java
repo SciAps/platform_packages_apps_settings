@@ -279,11 +279,13 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             boolean wifiDisplayActivated = Settings.Global.getInt(getContentResolver(),
                     Settings.Global.WIFI_DISPLAY_ON, 0) != 0;
 
-            mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
+            if (mWifiDisplayActivator != null) {
+                mWifiDisplayActivator.setEnabled(Settings.Global.getInt(getContentResolver(),
                     Settings.Global.WIFI_ON, 0) != 0);
 
-            mWifiDisplayActivator.setChecked(wifiDisplayActivated);
-            mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+                mWifiDisplayActivator.setChecked(wifiDisplayActivated);
+                mWifiDisplayPreference.setEnabled(wifiDisplayActivated);
+            }
         }
 
         updateState();
