@@ -309,8 +309,12 @@ public class StorageVolumePreferenceCategory extends PreferenceCategory {
 
     private static long totalValues(HashMap<String, Long> map, String... keys) {
         long total = 0;
-        for (String key : keys) {
-            total += map.get(key);
+        if (map != null)
+        {
+            for (String key : keys) {
+                Long value = map.get(key);
+                total += value == null ? 0: value;
+            }
         }
         return total;
     }
